@@ -1,0 +1,118 @@
+﻿@page "/movies/details"
+@inject Ogrodnik_lab4_zad2.Data.ApplicationDbContext DB
+@using Ogrodnik_lab4_zad2.Components.Entities
+@inject NavigationManager NavigationManager
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using System
+@using System.IO
+@using System.Net
+@using System.Text
+@using System.Drawing
+
+
+<PageTitle>Details</PageTitle>
+
+<h1>Details</h1>
+
+<div>
+    <h4>Movie</h4>
+    <hr />
+    @if (movie is null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else {
+        <dl class="row">
+            <dt class="col-sm-2">Title</dt>
+            <dd class="col-sm-10">@movie.Title</dd>
+            <dt class="col-sm-2">Description</dt>
+            <dd class="col-sm-10">@movie.Description</dd>
+            <dt class="col-sm-2">RelaseDate</dt>
+            <dd class="col-sm-10">@movie.RelaseDate</dd>
+            <dt class="col-sm-2">Rate</dt>
+            <dd class="col-sm-10">@movie.Rate</dd>
+            <dt class="col-sm-2">Icon</dt>
+            <dd class="col-sm-10"><img src="@movie.Url" alt="Movie Image"></dd>
+
+        </dl>
+        <div>
+            <AuthorizeView>
+            <a href="@($"/movies/edit?id={movie.Id}")">Edit</a> |
+            </AuthorizeView>
+
+            <a href="@($"/movies")">Back to List</a>
+        </div>
+    }
+</div>
+<button @onclick="AddRatio">Add Ratio</button>
+
+@if (IfRatioChanging)
+{
+    <input class="form-control" @oninput="@InputRate" />
+    <button @onclick="Submit">Submit</button>
+}
+
+@if(ErrorInput)
+{
+    <h4>Too big Rate</h4>
+}
+
+@code {
+        Movie? movie;
+    private bool IfRatioChanging = false;
+    private bool ErrorInput = false;
+    private float? tempRate;
+    private float? newRate;
+    [SupplyParameterFromQuery]
+    public int Id { get; set; }
+
+    Image image;
+
+    protected override async Task OnInitializedAsync()
+    {
+        movie = await DB.Movie.FirstOrDefaultAsync(m => m.Id == Id);
+        //movie.Url = "http://www.gravatar.com/avatar/6810d91caff032b202c50701dd3af745?d=identicon&r=PG";
+        //movie.Url = "https://t3.ftcdn.net/jpg/00/64/87/32/360_F_64873264_BglfitbVZ57g5IZmT2HZ6eSTwiUg65n7.jpg";
+
+        if (movie is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+
+    }
+
+
+    private void AddRatio()
+    {
+        IfRatioChanging = true;
+    }
+
+    private void InputRate(ChangeEventArgs arg)
+    {
+        var input = float.Parse(arg.Value.ToString());
+        if (input > 10)
+        {
+            ErrorInput = true;
+            return;
+        }
+        else
+            ErrorInput = false;
+
+        tempRate = movie.Rate;
+        newRate = (tempRate + float.Parse(arg.Value.ToString()))/2;
+    }
+
+    private void Submit()
+    {
+        if (ErrorInput)
+            return;
+        movie.Rate = newRate;
+        DB.Movie.Update(movie);
+        DB.SaveChanges();
+
+        IfRatioChanging = false;
+        ErrorInput = false;
+    }
+
+}

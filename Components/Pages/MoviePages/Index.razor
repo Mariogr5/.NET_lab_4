@@ -1,0 +1,80 @@
+﻿@page "/movies"
+@using Microsoft.AspNetCore.Components.QuickGrid
+@rendermode InteractiveServer
+@inject Ogrodnik_lab4_zad2.Data.ApplicationDbContext DB
+@inject NavigationManager NavigationManager
+@using Ogrodnik_lab4_zad2.Components.Entities
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.Authorization
+
+<PageTitle>Index</PageTitle>
+        <center>
+
+<h1>Przeglądaj filmy</h1>
+
+<button class="btn btn-danger" @onclick="SortbyTitle">Sort by Title</button>
+<button class="btn btn-danger" @onclick="SortbyRelaseDate">Sort by Release Date</button>
+<button class="btn btn-danger" @onclick="SortbyRate">Sort by Rate</button>
+        </center>
+
+
+<QuickGrid Class="table" Items="@movies">
+    <PropertyColumn Property="movie => movie.Title" />
+    <!--<PropertyColumn Property="movie => movie.Description" />-->
+    <PropertyColumn Property="movie => movie.RelaseDate" />
+    <PropertyColumn Property="movie => movie.Rate" />
+
+    <TemplateColumn Context="movie">
+        <AuthorizeView>
+            <Authorized>
+                <a href="@($"movies/edit?id={movie.Id}")">Edit</a>
+            </Authorized>
+        </AuthorizeView>
+        |
+        <a href="@($"movies/details?id={movie.Id}")">Details</a> |
+
+        <AuthorizeView>
+        <a href="@($"movies/delete?id={movie.Id}")">Delete</a>
+        </AuthorizeView>
+
+    </TemplateColumn>
+</QuickGrid>
+
+<p>
+    <AuthorizeView>
+        <center>
+        <a style="text-align:center" class="btn btn-danger"  href="movies/create">Create New</a>
+        </center>
+    </AuthorizeView>
+</p>
+
+@code
+{
+    private IQueryable<Movie> movies;
+    private IQueryable<Movie> tempMovies;
+
+    protected override async Task OnInitializedAsync()
+    {
+        movies = DB.Movie.AsQueryable();
+        tempMovies = movies;
+
+        if (movies is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+
+    private void SortbyTitle()
+    {
+        movies = tempMovies.OrderBy(x => x.Title).AsQueryable();
+
+    }
+    private void SortbyRelaseDate()
+    {
+        movies = tempMovies.OrderBy(x => x.RelaseDate).AsQueryable();
+    }
+    private void SortbyRate()
+    {
+        movies = tempMovies.OrderByDescending(x => x.Rate).AsQueryable();
+    }
+}
